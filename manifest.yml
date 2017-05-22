@@ -1,7 +1,6 @@
 ---
 applications:
 - name: spring-music-to-singpower
-  memory: 1G
+  memory: 512M
   #random-route: true
   path: build/libs/spring-music.jar
-
