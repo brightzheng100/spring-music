@@ -1,0 +1,14 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: itstarting/cloudfoundry
+    tag: "latest"
+
+inputs:
+  - name: resource-repo
+
+run:
+  path: resource-repo/ci/cf_deployment.sh

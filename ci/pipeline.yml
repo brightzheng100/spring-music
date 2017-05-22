@@ -1,0 +1,23 @@
+---
+resources:
+- name: resource-repo
+  type: git
+  source:
+    uri: https://github.com/brightzheng100/spring-music.git
+
+jobs:
+- name: job-deploy-java-app
+  public: true
+  serial: true
+  plan:
+  - get: resource-repo
+    trigger: true
+  - task: build-deploy-web-app
+    file: resource-repo/ci/cf_deployment.yml
+    params:
+      API_ENDPOINT: {{cf-api}}
+      USERNAME: {{cf-username}}
+      PASSWORD: {{cf-password}}
+      ORG: {{cf-organization}}
+      SPACE: {{cf-space}}
+      HOST: java-demo-to-singpower
