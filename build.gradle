@@ -67,7 +67,7 @@ dependencies {
 
 jar {
     baseName = "spring-music"
-    version = "" // omit the version from the war file name
+    version = "${version}"
 }
 
 task wrapper(type: Wrapper) {
