@@ -23,10 +23,10 @@ jobs:
     - task: build-artifact
       file: git-repo/ci/tasks/build-artifact.yml
       timeout: 5m
-    # Publish the RC *.war to bucket
+    # Publish the RC *.jar to bucket
     - put: bucket-release-candidate
       params:
-        file: artifact-dir/spring-music*.war
+        file: artifact-dir/spring-music*.jar
     # Tag the Git Repo with the version/number
     - put: git-repo
       params:
@@ -54,7 +54,7 @@ jobs:
       params:
         manifest: git-repo/manifest-test.yml
         current_app_name: spring-music-test
-        path: bucket-release-candidate/spring-music*.war
+        path: bucket-release-candidate/spring-music*.jar
     # Verify the app whether it's been successfully deployed
     - task: verify
       file: git-repo/ci/tasks/verify-test.yml
@@ -79,7 +79,7 @@ jobs:
       params:
         manifest: git-repo/manifest-uat.yml
         current_app_name: spring-music-uat
-        path: bucket-release-candidate/spring-music*.war
+        path: bucket-release-candidate/spring-music*.jar
 
   # Finally deploy it to PROD Env
   - name: ship-it
@@ -103,13 +103,13 @@ jobs:
     # Put it to bucket
     - put: bucket-production-release
       params:
-        file: final-dir/spring-music*.war
+        file: final-dir/spring-music*.jar
     # Deploy app to PROD Env
     - put: cf-deploy-production-app
       params:
         manifest: git-repo/manifest-prod.yml
         current_app_name: spring-music
-        path: final-dir/spring-music*.war
+        path: final-dir/spring-music*.jar
 
   - name: major
     serial_groups: [ version ]
