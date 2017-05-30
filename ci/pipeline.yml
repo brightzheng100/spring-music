@@ -1,23 +1,212 @@
----
+jobs:
+  # Unit Test
+  - name: unit-tests
+    plan:
+    - get: git-repo
+      trigger: true
+    - task: unit
+      file: git-repo/ci/tasks/unit.yml
+
+  # Build Artifacts
+  - name: build-artifact
+    serial_groups: [version]
+    serial: true
+    plan:
+    # Clone the Git Repo
+    - get: git-repo
+      passed: [unit-tests]
+      trigger: true
+    # Version it as Release Candidate
+    - get: version
+      params: { pre: rc }
+    # Build the apps by Gradle
+    - task: build-artifact
+      file: git-repo/ci/tasks/build-artifact.yml
+      timeout: 5m
+    # Publish the RC *.war to bucket
+    - put: bucket-release-candidate
+      params:
+        file: artifact-dir/spring-music*.war
+    # Tag the Git Repo with the version/number
+    - put: git-repo
+      params:
+        repository: git-repo
+        tag: version/number
+    # Update the version number to Git Repo
+    - put: version
+      params: {file: version/number}
+
+  # SIT
+  - name: integration-tests
+    serial_groups: [version]
+    plan:
+    # Aggregate the inputs for further SIT
+    - aggregate:
+      - get: version
+        passed: [build-artifact]
+        trigger: true
+      - get: bucket-release-candidate
+        passed: [build-artifact]
+      - get: git-repo
+        passed: [build-artifact]
+    # Deploy app to Test Env
+    - put: cf-deploy-test-app
+      params:
+        manifest: git-repo/manifest-test.yml
+        current_app_name: spring-music-test
+        path: bucket-release-candidate/spring-music*.war
+    # Verify the app whether it's been successfully deployed
+    - task: verify
+      file: git-repo/ci/tasks/verify-test.yml
+      params:
+        CONCOURSE_DEMO_URL: {{VERIFY_URL}}
+
+  # Promote to UAT after test has been verified
+  - name: promote-to-uat
+    serial_groups: [version]
+    plan:
+    # Aggregate inputs for UAT
+    - aggregate:
+      - get: bucket-release-candidate
+        passed: [integration-tests]
+        trigger: true
+      - get: version
+        passed: [integration-tests]
+      - get: git-repo
+        passed: [integration-tests]
+    # Deploy to UAT Env
+    - put: cf-deploy-uat-app
+      params:
+        manifest: git-repo/manifest-uat.yml
+        current_app_name: spring-music-uat
+        path: bucket-release-candidate/spring-music*.war
+
+  # Finally deploy it to PROD Env
+  - name: ship-it
+    serial_groups: [version]
+    serial: true
+    plan:
+    # Aggregate the inputs for PROD
+    - aggregate:
+      - get: bucket-release-candidate
+        passed: [promote-to-uat]
+      - get: version
+        params: { bump: final }
+        passed: [promote-to-uat]
+      - get: git-repo
+        passed: [promote-to-uat]
+    # Prepare for final
+    - task: prepare-final
+      file: git-repo/ci/tasks/prepare-final.yml
+      params:
+        base_name: spring-music
+    # Put it to bucket
+    - put: bucket-production-release
+      params:
+        file: final-dir/spring-music*.war
+    # Deploy app to PROD Env
+    - put: cf-deploy-production-app
+      params:
+        manifest: git-repo/manifest-prod.yml
+        current_app_name: spring-music
+        path: final-dir/spring-music*.war
+
+  - name: major
+    serial_groups: [ version ]
+    plan:
+      - put: version
+        params: { bump: major, pre: rc }
+
+  - name: minor
+    serial_groups: [ version ]
+    plan:
+      - put: version
+        params: { bump: minor, pre: rc }
+
+  - name: patch
+    serial_groups: [ version ]
+    plan:
+      - get: version
+        passed: [ ship-it ]
+        trigger: true
+      - put: version
+        params: { bump: patch }
+
+##############################################################################
+
+# Resources
 resources:
-- name: resource-repo
+
+# Git Resource
+- name: git-repo
   type: git
   source:
-    uri: https://github.com/brightzheng100/spring-music.git
+    uri: {{GIT_REPO}}
+    branch: master
+    private_key: {{GIT_PRIVATE_KEY}}
 
-jobs:
-- name: job-deploy-java-app
-  public: true
-  serial: true
-  plan:
-  - get: resource-repo
-    trigger: true
-  - task: build-deploy-web-app
-    file: resource-repo/ci/cf_deployment.yml
-    params:
-      API_ENDPOINT: {{cf-api}}
-      USERNAME: {{cf-username}}
-      PASSWORD: {{cf-password}}
-      ORG: {{cf-organization}}
-      SPACE: {{cf-space}}
-      HOST: java-demo-to-singpower
+# CF Resource for Test
+- name: cf-deploy-test-app
+  type: cf
+  source:
+    api: {{CF_API}}
+    username: {{CF_USER}}
+    password: {{CF_PASS}}
+    organization: {{CF_TEST_ORG}}
+    space: {{CF_TEST_SPACE}}
+    skip_cert_check: true
+
+# CF Resource for UAT
+- name: cf-deploy-uat-app
+  type: cf
+  source:
+    api: {{CF_API}}
+    username: {{CF_USER}}
+    password: {{CF_PASS}}
+    organization: {{CF_UAT_ORG}}
+    space: {{CF_UAT_SPACE}}
+    skip_cert_check: true
+
+# CF Resource for PROD
+- name: cf-deploy-production-app
+  type: cf
+  source:
+    api: {{CF_API}}
+    username: {{CF_USER}}
+    password: {{CF_PASS}}
+    organization: {{CF_PROD_ORG}}
+    space: {{CF_PROD_SPACE}}
+    skip_cert_check: true
+
+# Semver
+- name: version
+  type: semver
+  source:
+    driver: s3
+    bucket: {{S3_BUCKET}}
+    key: {{S3_VERSION_FILE}}
+    access_key_id: {{S3_ACCESS_KEY_ID}}
+    secret_access_key: {{S3_SECRET_ACCESS_KEY}}
+    endpoint: {{S3_ENDPOINT}}
+    disable_ssl: true
+    initial_version: 1.0.0
+
+- name: bucket-release-candidate
+  type: s3
+  source:
+    bucket: {{S3_BUCKET}}
+    regexp: {{S3_PIPELINE_ARTIFACTS}}
+    access_key_id: {{S3_ACCESS_KEY_ID}}
+    secret_access_key: {{S3_SECRET_ACCESS_KEY}}
+    endpoint: {{S3_ENDPOINT}}
+    disable_ssl: true
+
+- name: bucket-production-release
+  type: s3
+  source:
+    bucket: {{S3_BUCKET}}
+    regexp: {{S3_DEPLOYMENTS}}
+    access_key_id: {{S3_ACCESS_KEY_ID}}
+    secret_access_key: {{S3_SECRET_ACCESS_KEY}}
+    endpoint: {{S3_ENDPOINT}}
+    disable_ssl: true
