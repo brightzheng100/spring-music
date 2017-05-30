@@ -194,8 +194,9 @@ resources:
 - name: bucket-release-candidate
   type: s3
   source:
-    bucket: {{S3_BUCKET_RC}}
-    regexp: {{S3_ARTIFACTS_REGEXP}}
+    bucket: {{S3_BUCKET}}
+    versioned_file: {{S3_VERSION_FILE}}
+    #regexp: {{S3_ARTIFACTS_REGEXP}}
     access_key_id: {{S3_ACCESS_KEY_ID}}
     secret_access_key: {{S3_SECRET_ACCESS_KEY}}
     endpoint: {{S3_ENDPOINT}}
@@ -204,8 +205,9 @@ resources:
 - name: bucket-production-release
   type: s3
   source:
-    bucket: {{S3_BUCKET_PROD}}
-    regexp: {{S3_ARTIFACTS_REGEXP}}
+    bucket: {{S3_BUCKET}}
+    versioned_file: {{S3_VERSION_FILE}}
+    #regexp: {{S3_ARTIFACTS_REGEXP}}
     access_key_id: {{S3_ACCESS_KEY_ID}}
     secret_access_key: {{S3_SECRET_ACCESS_KEY}}
     endpoint: {{S3_ENDPOINT}}
