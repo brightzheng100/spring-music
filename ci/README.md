@@ -22,7 +22,7 @@ Resources in Concourse are implemented as docker images which contain implementa
 
 ## Pipeline
 
-There are 6 stages in this pipeline:
+There are 6 jobs in this pipeline:
 - Unit Test
 - Build Artifacts
 - Integration Tests
@@ -30,93 +30,109 @@ There are 6 stages in this pipeline:
 - Ship It to Production
 - Tag It
 
-### Unit Test
+### 1. Unit Test
 
 This job has two tasks:
 * checks out the source from `git-repo`;
 * runs a task to perform unit test simply by `gradle test` command.
 
-### Build Artifacts
 
-* music-repo - Check out the same source version of music-repo as unit step
-* version - Checkout the version file from s3
-* "gradle assemble" generates the war artifact
-* Push the artifact to the s3 resource as music-resource
-* Git tag on the music-repo
-* Bump the version resource for the next usage
+### 2. Build Artifacts
 
-### acceptance-tests
+This job has 6 tasks:
+* checks out the source from `git-repo`;
+* checks out the current version to get the right RC version;
+* builds the apps by `gradle assemble -Pversion=$version`
+* puts the built artifact, e.g spring-music-1.0.2-rc.1.jar to S3 bucket defined as resource `bucket-release-candidate`
+* tags Git repo as release candidate, e.g. 1.0.2-rc.2
+* bumps the `version` resource for the next usage
 
-* Pull the binary from music-release
-* Deploy to cloudfoundry acceptance tests space
-* Run Automation Acceptance Tests suite
+### 3. Integration Test
 
-### promote-to-uat
+This job has 3 tasks:
+* aggregates `version`, `bucket-release-candidate` and `git-repo` tasks to make sure that all inputs are ready before processing;
+* deploys to Cloud Foundry SIT env defined by resource `cf-deploy-test-app`, where we can specify org and space;
+* verifies the deployment. Here we simply curl the app's home page to check wether we can get 200 HTTP response.
 
-* Pull the binary from music-release
-* Deploy to cloudfoundry uat space
-* Waiting for user acceptance tests
+### 4. Promote To UAT
 
-### manual-deploy-to-prod
+Similar to above step of "Integration Test", this job:
+* aggregates `version`, `bucket-release-candidate` and `git-repo` tasks to make sure that all inputs are ready before processing;
+* deploys to Cloud Foundry UAT env defined by resource `cf-deploy-uat-app`, where we can specify org and space
+* then waits for user acceptance tests
 
-* Manually trigger the build when the operators are ready
-* Pull the binary from music-release
-* Deploy to prod
+### 5. Ship It To Production
 
-### How to replicate this pipeline in your env
+This job is intentionally set as manual one. There hasn't any enabled triggers as job's input. So after UAT, there is a need to trigger it manually for further processing:
+* aggregates `version`, `bucket-release-candidate` and `git-repo` tasks;
+* prepares the artifact with right release version, e.g spring-music-1.0.2.jar;
+* puts it to `bucket-production-release`
+* deploys to Cloud Foundry PROD env defined by resource `cf-deploy-production-app`, where we can specify org and space
+
+### 6. Tag It To Git Repo
+
+This job has 3 tasks:
+* retrieves back the current release `version`
+* tags it to `git-repo`
+* bumps the `version` resource for the next usage
+
+
+## How to replicate this pipeline in your env
 
 * If you don't already have a Concourse environment, you can quickly spin one up locally with [Vagrant](https://concourse.ci/vagrant.html])
 
 * Download the `fly` CLI by visiting `http://192.168.100.4:8080` and selecting your OS then install
 
-* Fork this github repo to your own github account, [ generate the key pair and add the public key to github ](https://help.github.com/articles/generating-ssh-keys/), and save the private key for future usage.
+* Fork this Github repo to your own Github account, [ generate the key pair and add the public key to github ](https://help.github.com/articles/generating-ssh-keys/), and save the private key for future usage.
 
+* If you don't have AWS account or simply don't want to use AWS S3, you can install [Minio](https://www.minio.io/) locally, it's S3 compatible. Then prepare two buckets:
+  * spring-music-rc
+  * spring-music-release
 
-* Prepare a s3 bucket named as `spring-music-YOURNAME`
-  * Create folders `pipeline-artifacts` and `deployments` in the bucket
-  * Create a file called `current-version` in the `pipeline-artifacts` folder and give it an initial content of `1.0.0`
-
-
-* Install PCF Dev ([Vagrant VM](http://pivotal.io/pcf-dev))
- * Setup spaces for development, test, uat and production
-  * `cf create-space development`
+* Install [PCF Dev](http://pivotal.io/pcf-dev) or simply register a free trail account in [Pivotal Web Services](https://pws.pivotal.io/) and then:
+  * Setup spaces for test, uat and prod by:
   * `cf create-space test`
   * `cf create-space uat`
-  * `cf create-space production`
+  * `cf create-space prod`
 
 
 * Set your fly endpoint (assuming you are taking the easy way and using vagrant)
 
   * `fly -t lite login -c http://192.168.100.4:8080`
 
-  * Configure your environment details in [spring-music-pcfdev-credentials.yml](spring-music-pcfdev-credentials.yml)
-    E.g.
+* Create a new parameters.yml file by following below example:
 
-    ```
-    GIT_SPRING_MUSIC_REPO: git@github.com:REPLACE_ME/concourse-spring-music.git
-    GIT_BRANCH: master
-    CF_API: https://api.local.pcfdev.io
-    CF_USER: admin
-    CF_PASS: admin
-    CF_DEV_ORG: pcfdev-org
-    CF_DEV_SPACE: development
-    CF_TEST_ORG: pcfdev-org
-    CF_TEST_SPACE: test
-    CF_UAT_ORG: pcfdev-org
-    CF_UAT_SPACE: uat
-    CF_PROD_ORG: pcfdev-org
-    CF_PROD_SPACE: prod
-    S3_ACCESS_KEY_ID: REPLACE_ME
-    S3_SECRET_ACCESS_KEY: REPLACE_ME
-    S3_BUCKET: REPLACE_ME
-    MUSIC_PRIVATE_KEY: |
-      -----BEGIN RSA PRIVATE KEY-----
-      REPLACE_ME
-      -----END RSA PRIVATE KEY-----
-    ```
+```
+VERIFY_URL: [CHANGE-ME], e.g https://spring-music-test-bright-zheng.cfapps.io/
 
-  * `fly -t lite set-pipeline -p spring-music -c ci/spring-music.yml -l spring-music-pcfdev-credentials.yml`
-  * `fly -t lite unpause-pipeline -p spring-music`
-  * Open `http://192.168.100.4:8080` in your browser and enjoy!
+CF_API: https://api.run.pivotal.io
+CF_USER: [CHANGE-ME]
+CF_PASS: [CHANGE-ME]
+CF_TEST_ORG: [CHANGE-ME]
+CF_TEST_SPACE: test
+CF_UAT_ORG: [CHANGE-ME]
+CF_UAT_SPACE: uat
+CF_PROD_ORG: XXX
+CF_PROD_SPACE: prod
 
-###  __FYI DO NOT COMMIT `spring-music-pcfdev-credentials.yml` as it has all your secrets__
+S3_BUCKET_RC: spring-music-rc
+S3_BUCKET_RELEASE: spring-music-release
+S3_RC_REGEXP: spring-music-(.*).(.*).(.*)-rc.(.*).jar
+S3_PROD_REGEXP: spring-music-(.*).(.*).(.*).jar
+S3_VERSION_FILE: version
+S3_ACCESS_KEY_ID: [CHANGE-ME]
+S3_SECRET_ACCESS_KEY: [CHANGE-ME]
+S3_ENDPOINT: http://192.168.100.4:9000
+
+GIT_REPO: [CHANGE-ME], e.g git@github.com:brightzheng100/spring-music.git
+GIT_PRIVATE_KEY: |
+  -----BEGIN RSA PRIVATE KEY-----
+  PUT YOUR GITHUB ACCOUNT PRIVATE KEY
+  -----END RSA PRIVATE KEY-----
+
+```
+
+  * Set up your pipeline
+    * `fly -t lite set-pipeline -p spring-music-pipeline -c spring-music/ci/pipeline.yml -l parameters.yml`
+    * `fly -t lite unpause-pipeline -p spring-music-pipeline`
+    * Open `http://192.168.100.4:8080` in your browser and enjoy!
