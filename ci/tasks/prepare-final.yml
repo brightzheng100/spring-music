@@ -10,7 +10,7 @@ image_resource:
 inputs:
   - name: git-repo
   - name: version
-  - name: release-candidate
+  - name: bucket-release-candidate
 
 outputs:
   - name: final-dir
