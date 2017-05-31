@@ -87,6 +87,7 @@ jobs:
     serial: true
     plan:
     # Aggregate the inputs for PROD
+    # Note: intentionally not set the trigger here
     - aggregate:
       - get: bucket-release-candidate
         passed: [promote-to-uat]
@@ -111,19 +112,19 @@ jobs:
         current_app_name: spring-music
         path: final-dir/spring-music*.jar
 
-  - name: major
-    serial_groups: [ version ]
-    plan:
-      - put: version
-        params: { bump: major, pre: rc }
+#  - name: major
+#    serial_groups: [ version ]
+#    plan:
+#      - put: version
+#        params: { bump: major, pre: rc }
+#
+#  - name: minor
+#    serial_groups: [ version ]
+#    plan:
+#      - put: version
+#        params: { bump: minor, pre: rc }
 
-  - name: minor
-    serial_groups: [ version ]
-    plan:
-      - put: version
-        params: { bump: minor, pre: rc }
-
-  - name: patch
+  - name: tag-it
     serial_groups: [ version ]
     plan:
       - get: version
@@ -191,6 +192,7 @@ resources:
     disable_ssl: true
     initial_version: 1.0.0
 
+# S3 bucket for release candidates
 - name: bucket-release-candidate
   type: s3
   source:
@@ -202,6 +204,7 @@ resources:
     endpoint: {{S3_ENDPOINT}}
     disable_ssl: true
 
+# S3 bucket for final releases
 - name: bucket-production-release
   type: s3
   source:

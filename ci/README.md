@@ -1,4 +1,4 @@
-#Spring music on concourse
+# Spring music with Concourse Pipeline
 
 ![](images/pipeline.png)
 
@@ -9,15 +9,26 @@
 
 ## Resources
 
-Resources in concourse are implemented as docker images which contain implementations corresponding their types
+Resources in Concourse are implemented as docker images which contain implementations corresponding their types. In this pipeline, we use below resources:
 
-* music-repo ([git-resource](https://github.com/concourse/git-resource)): A github repo. E.g. spring music github resource
+- [git-resource](https://github.com/concourse/git-resource): named `git-repo` in the pipeline, which is where Spring Music App is hosted, be it in on-prem or in Github.
 
-* version ([semver-resource](https://github.com/concourse/semver-resource)): A file to track the version stored in s3. E.g. 1.0.1 in a file named as current-version
+- [semver-resource](https://github.com/concourse/semver-resource): named `version` in the pipeline, which uses a version file, stored in AWS S3 or S3 compatible (e.g [Minio](https://www.minio.io/)) bucket, to track the version, e.g. 1.0.1, for artifacts versioning and tagging for git repo.
 
-* music-release (([s3-resource](https://github.com/concourse/s3-resource))) A bucket in s3 that stores spring-music artifact E.g. spring-music-1.0.1.war
+- [s3-resource](https://github.com/concourse/s3-resource): named `bucket-release-candidate` and `bucket-production-release` in the pipeline, which define the buckets to store release candidates (e.g. spring-music-1.0.1-rc.1.jar) and final release artifacts (e.g spring-music-1.0.1.jar).
 
-## Pipeline Progress
+- [cf-resource](https://github.com/concourse/cf-resource): named `cf-deploy-test-app`, `cf-deploy-uat-app` and `cf-deploy-production-app` in the pipeline, to represent 3 different Cloud Foundry environments  
+
+
+## Pipeline
+
+There are 6 stages in this pipeline:
+- Unit Test
+- Build Artifacts
+- Integration Tests
+- Promote to UAT
+- Ship It to Production
+- Tag It
 
 ### Check out from the music-repo
 
