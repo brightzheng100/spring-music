@@ -1,11 +1,6 @@
-# Spring music with Concourse Pipeline
+# Spring music with [Concourse](http://councourse.ci) Pipeline
 
 ![](images/pipeline.png)
-
-* [Concourse](http://councourse.ci)
-* Build only once and deploy anywhere
-* Every build is a release candidate
-* Every build step runs inside a docker container mounting to garden linux cells
 
 ## Resources
 
@@ -44,7 +39,7 @@ This job has 6 tasks:
 * checks out the current version to get the right RC version;
 * builds the apps by `gradle assemble -Pversion=$version`
 * puts the built artifact, e.g spring-music-1.0.2-rc.1.jar to S3 bucket defined as resource `bucket-release-candidate`
-* tags Git repo as release candidate, e.g. 1.0.2-rc.2
+* (optional, uncomment it to enable) tags Git repo as release candidate, e.g. 1.0.2-rc.2
 * bumps the `version` resource for the next usage
 
 ### 3. Integration Test
@@ -79,7 +74,7 @@ This job has 3 tasks:
 
 ## How to replicate this pipeline in your env
 
-* If you don't already have a Concourse environment, you can quickly spin one up locally with [Vagrant](https://concourse.ci/vagrant.html])
+* If you don't already have a Concourse environment, you can quickly spin one up locally with [Vagrant](https://concourse.ci/vagrant.html)
 
 * Download the `fly` CLI by visiting `http://192.168.100.4:8080` and selecting your OS then install
 
@@ -100,7 +95,7 @@ This job has 3 tasks:
 
   * `fly -t lite login -c http://192.168.100.4:8080`
 
-* Create a new parameters.yml file by following below example:
+* Create a new `parameters.yml` file by following below example:
 
 ```
 VERIFY_URL: [CHANGE-ME], e.g https://spring-music-test-bright-zheng.cfapps.io/

@@ -28,10 +28,10 @@ jobs:
       params:
         file: artifact-dir/spring-music*.jar
     # Tag the Git Repo with the RC
-    - put: git-repo
-      params:
-        repository: git-repo
-        tag: version/number
+    #- put: git-repo
+    #  params:
+    #    repository: git-repo
+    #    tag: version/number
     # Bump the version number
     - put: version
       params: {file: version/number}
