@@ -125,16 +125,22 @@ jobs:
 #        params: { bump: minor, pre: rc }
 
   - name: tag-it
-    serial_groups: [ version ]
+    serial_groups: [version]
     plan:
       - get: version
-        passed: [ ship-it ]
+        params: {bump: final}
+        passed: [ship-it]
         trigger: true
       # Tag the Git Repo for the release
+      - get: git-repo
+        passed: [ship-it]
+        trigger: true
       - put: git-repo
         params:
           repository: git-repo
           tag: version/number
+          notes: "tagged by Concourse"
+      # Release a new version
       - put: version
         params: { bump: patch }
 
