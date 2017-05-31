@@ -30,14 +30,13 @@ There are 6 stages in this pipeline:
 - Ship It to Production
 - Tag It
 
-### Check out from the music-repo
+### Unit Test
 
-### Unit testing spring-music
+This job has two tasks:
+* checks out the source from `git-repo`;
+* runs a task to perform unit test simply by `gradle test` command.
 
-This step runs on a container with gradle and java installed.
-Basically it just runs "gradle test" against the music-repo
-
-### Build Binary
+### Build Artifacts
 
 * music-repo - Check out the same source version of music-repo as unit step
 * version - Checkout the version file from s3
