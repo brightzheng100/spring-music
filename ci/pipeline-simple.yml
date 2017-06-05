@@ -1,11 +1,5 @@
+---
 jobs:
-  # Unit Test
-  - name: unit-tests
-    plan:
-    - get: git-repo
-      trigger: true
-    - task: unit
-      file: git-repo/ci/tasks/unit.yml
 
   # Build Artifacts
   - name: build-artifact
@@ -14,7 +8,6 @@ jobs:
     plan:
     # Clone the Git Repo
     - get: git-repo
-      passed: [unit-tests]
       trigger: true
     # Version it as Release Candidate
     - get: version
@@ -27,12 +20,6 @@ jobs:
     - put: bucket-release-candidate
       params:
         file: artifact-dir/spring-music*.jar
-    # Tag the Git Repo with the RC
-    #- put: git-repo
-    #  params:
-    #    repository: git-repo
-    #    tag: version/number
-    # Bump the version number
     - put: version
       params: {file: version/number}
 
@@ -61,26 +48,6 @@ jobs:
       params:
         CONCOURSE_DEMO_URL: {{VERIFY_URL}}
 
-  # Promote to UAT after test has been verified
-  - name: promote-to-uat
-    serial_groups: [version]
-    plan:
-    # Aggregate inputs for UAT
-    - aggregate:
-      - get: version
-        passed: [integration-tests]
-        trigger: true
-      - get: bucket-release-candidate
-        passed: [integration-tests]
-      - get: git-repo
-        passed: [integration-tests]
-    # Deploy to UAT Env
-    - put: cf-deploy-uat-app
-      params:
-        manifest: git-repo/manifest-uat.yml
-        current_app_name: spring-music-uat
-        path: bucket-release-candidate/spring-music*.jar
-
   # Finally deploy it to PROD Env
   - name: ship-it
     serial_groups: [version]
@@ -90,12 +57,13 @@ jobs:
     # Note: intentionally not set the trigger here
     - aggregate:
       - get: bucket-release-candidate
-        passed: [promote-to-uat]
+        passed: [integration-tests]
       - get: version
         params: { bump: final }
-        passed: [promote-to-uat]
+        passed: [integration-tests]
+        trigger: true
       - get: git-repo
-        passed: [promote-to-uat]
+        passed: [integration-tests]
     # Prepare for final
     - task: prepare-final
       file: git-repo/ci/tasks/prepare-final.yml
@@ -111,18 +79,6 @@ jobs:
         manifest: git-repo/manifest-prod.yml
         current_app_name: spring-music
         path: final-dir/spring-music*.jar
-
-#  - name: major
-#    serial_groups: [ version ]
-#    plan:
-#      - put: version
-#        params: { bump: major, pre: rc }
-#
-#  - name: minor
-#    serial_groups: [ version ]
-#    plan:
-#      - put: version
-#        params: { bump: minor, pre: rc }
 
   - name: tag-it
     serial_groups: [version]

@@ -8,7 +8,6 @@ image_resource:
     tag: "latest"
 
 inputs:
-  - name: git-repo
   - name: version
   - name: bucket-release-candidate
 
