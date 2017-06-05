@@ -124,17 +124,6 @@ resources:
     space: {{CF_TEST_SPACE}}
     skip_cert_check: true
 
-# CF Resource for UAT
-- name: cf-deploy-uat-app
-  type: cf
-  source:
-    api: {{CF_API}}
-    username: {{CF_USER}}
-    password: {{CF_PASS}}
-    organization: {{CF_UAT_ORG}}
-    space: {{CF_UAT_SPACE}}
-    skip_cert_check: true
-
 # CF Resource for PROD
 - name: cf-deploy-production-app
   type: cf
