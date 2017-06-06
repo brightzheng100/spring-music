@@ -9,6 +9,7 @@ image_resource:
 
 inputs:
   - name: version
+  - name: git-repo
   - name: bucket-release-candidate
 
 outputs:
