@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+echo "running in prepare-final.sh"
+
 version=`cat version/number`
 echo "version to use: ${version}"
 

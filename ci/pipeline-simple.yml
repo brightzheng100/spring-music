@@ -61,7 +61,7 @@ jobs:
       - get: version
         params: { bump: final }
         passed: [integration-tests]
-        trigger: true
+        #trigger: true
       - get: git-repo
         passed: [integration-tests]
     # Prepare for final
