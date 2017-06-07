@@ -16,6 +16,8 @@ jobs:
     - task: build-artifact
       file: git-repo/ci/tasks/build-artifact.yml
       timeout: 5m
+      params:
+        DOCKER_IMAGE: {{DOCKER_IMAGE}}
     # Publish the RC *.jar to bucket
     - put: bucket-release-candidate
       params:
@@ -46,6 +48,7 @@ jobs:
     - task: verify
       file: git-repo/ci/tasks/verify-test.yml
       params:
+        DOCKER_IMAGE: {{DOCKER_IMAGE}}
         CONCOURSE_DEMO_URL: {{VERIFY_URL}}
 
   # Finally deploy it to PROD Env
@@ -61,7 +64,7 @@ jobs:
       - get: version
         params: { bump: final }
         passed: [integration-tests]
-        #trigger: true
+        trigger: true
       - get: git-repo
         passed: [integration-tests]
     # Prepare for final
@@ -69,6 +72,7 @@ jobs:
       file: git-repo/ci/tasks/prepare-final.yml
       params:
         base_name: spring-music
+        DOCKER_IMAGE: {{DOCKER_IMAGE}}
     # Put it to bucket
     - put: bucket-production-release
       params:
