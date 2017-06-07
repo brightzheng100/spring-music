@@ -4,7 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: {{DOCKER_IMAGE}}
+    repository: 192.168.100.1:5000/concourse-gradle
     tag: "latest"
 
 inputs:
