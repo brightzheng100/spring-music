@@ -12,3 +12,6 @@ inputs:
 
 run:
   path: git-repo/ci/tasks/unit.sh
+
+params:
+  DOCKER_IMAGE:

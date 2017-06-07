@@ -16,4 +16,5 @@ run:
   path: git-repo/ci/tasks/verify-test.sh
 
 params:
+  DOCKER_IMAGE:
   CONCOURSE_DEMO_URL:

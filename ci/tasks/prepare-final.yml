@@ -19,4 +19,5 @@ run:
   path: git-repo/ci/tasks/prepare-final.sh
 
 params:
+  DOCKER_IMAGE:
   base_name:
