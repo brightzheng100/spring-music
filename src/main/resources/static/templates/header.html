@@ -9,13 +9,14 @@
             </div>
 
             <ul class="nav navbar-nav navbar-right">
-                <li class="dropdown">
+                <li class="dropdown open">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                         <span class="glyphicon glyphicon-info-sign icon-white"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a><strong>Profiles:</strong> {{info.profiles.join()}}</a></li>
                         <li><a><strong>Services:</strong> {{info.services.join()}}</a></li>
+                        <li><a><strong>Profiles:</strong> {{info.profiles.join()}}</a></li>
+                        <li><a><strong>Server:</strong> {{info.serverInfo}}</a></li>
                     </ul>
                 </li>
             </ul>

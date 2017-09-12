@@ -8,6 +8,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,8 +25,11 @@ public class InfoController {
     }
 
     @RequestMapping(value = "/appinfo")
-    public ApplicationInfo info() {
-        return new ApplicationInfo(springEnvironment.getActiveProfiles(), getServiceNames());
+    public ApplicationInfo info(HttpServletRequest request) {
+        return new ApplicationInfo(
+                springEnvironment.getActiveProfiles(),
+                getServiceNames(),
+                request);
     }
 
     @RequestMapping(value = "/service")
