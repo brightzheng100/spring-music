@@ -2,7 +2,7 @@
 set -e
 
 export GRADLE_OPTS=-Dorg.gradle.native=false
-version=`1.0.0`
+version="1.0.0"
 echo "version to use: ${version}"
 
 cd git-repo
