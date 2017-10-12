@@ -1,0 +1,20 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: concourse-gradle
+    tag: latest
+
+inputs:
+  - name: resource-git
+
+outputs:
+  - name: artifact-dir
+
+run:
+  path: resource-git/ci/tasks/tiny-all-in-one.sh
+
+params:
+  DOCKER_IMAGE:

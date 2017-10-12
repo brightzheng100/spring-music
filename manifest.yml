@@ -1,6 +1,6 @@
 ---
 applications:
-- name: spring-music-inmotion
-  memory: 1024M
-  #random-route: true
-  path: build/libs/spring-music.jar
+- name: spring-music-pivotal-1
+  memory: 1G
+  host: spring-music-pivotal-1
+  path: build/libs/spring-music-1.0.0.jar
