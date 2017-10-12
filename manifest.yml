@@ -1,6 +1,6 @@
 ---
 applications:
-- name: spring-music
-  memory: 512M
+- name: spring-music-inmotion
+  memory: 1024M
   #random-route: true
   path: build/libs/spring-music.jar
