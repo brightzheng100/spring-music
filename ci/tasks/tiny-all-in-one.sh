@@ -5,6 +5,6 @@ export GRADLE_OPTS=-Dorg.gradle.native=false
 version="1.0.0"
 echo "version to use: ${version}"
 
-cd git-repo
+cd resource-git
 gradle assemble -Pversion=$version
 cp build/libs/*.jar ../artifact-dir/
