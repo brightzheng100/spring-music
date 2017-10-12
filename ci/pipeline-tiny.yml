@@ -13,7 +13,7 @@ jobs:
     file: resource-git/ci/tasks/tiny-all-in-one.yml
   - put: cf-deploy-production-app
     params:
-      manifest: resource-git/manifest-prod.yml
+      manifest: resource-git/manifest.yml
       current_app_name: spring-music
       path: artifact-dir/spring-music*.jar
 
@@ -32,6 +32,6 @@ resources:
     api: ((CF_API))
     username: ((CF_USER))
     password: ((CF_PASSWD))
-    organization: ((CF_PROD_ORG))
-    space: ((CF_PROD_SPACE))
+    organization: ((CF_ORG))
+    space: ((CF_SPACE))
     skip_cert_check: true
