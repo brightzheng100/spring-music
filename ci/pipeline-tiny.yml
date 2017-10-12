@@ -4,41 +4,34 @@
 # - This pipeline just build and deploy the app to PWS continueously, with no downtime
 
 jobs:
-
-  # Deploy it PWS
-  - name: job-deploy-to-pws
-
-    plan:
-
-    - get: resource-git
-
-    - task: task-build-artifact
-      file: resource-git/ci/tasks/tiny-all-in-one.yml
-
-    - put: cf-deploy-production-app
-      params:
-        manifest: resource-git/manifest-prod.yml
-        current_app_name: spring-music
-        path: artifact-dir/spring-music*.jar
-
-##############################################################################
+# Deploy it PWS
+- name: job-deploy-to-pws
+  plan:
+  - get: resource-git
+    trigger: true
+  - task: task-build-artifact
+    file: resource-git/ci/tasks/tiny-all-in-one.yml
+  - put: cf-deploy-production-app
+    params:
+      manifest: resource-git/manifest-prod.yml
+      current_app_name: spring-music
+      path: artifact-dir/spring-music*.jar
 
 resources:
-
 # Git Resource
 - name: resource-git
   type: git
   source:
-    uri: https://github.com/brightzheng100/spring-music
+    uri: ((GIT_REPO))
     branch: master
 
 # CF Resource for PROD
 - name: cf-deploy-production-app
   type: cf
   source:
-    api: {{CF_API}}
-    username: {{CF_USER}}
-    password: {{CF_PASS}}
-    organization: {{CF_PROD_ORG}}
-    space: {{CF_PROD_SPACE}}
+    api: ((CF_API))
+    username: ((CF_USER))
+    password: ((CF_PASSWD))
+    organization: ((CF_PROD_ORG))
+    space: ((CF_PROD_SPACE))
     skip_cert_check: true
