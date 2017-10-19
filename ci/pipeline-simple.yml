@@ -1,142 +1,85 @@
 ---
+
+# == Description
+# This pipeline has only two Jobs
+# 1. Build and publish artifact(s) to S3 Store
+# 2. Deploy it to PWS
+
 jobs:
 
-  # Build Artifacts
-  - name: build-artifact
-    serial_groups: [version]
-    serial: true
-    plan:
-    # Clone the Git Repo
-    - get: git-repo
-      trigger: true
-    # Version it as Release Candidate
-    - get: version
-      params: { pre: rc }
-    # Build the apps by Gradle
-    - task: build-artifact
-      file: git-repo/ci/tasks/build-artifact.yml
-      timeout: 5m
-      params:
-        DOCKER_IMAGE: {{DOCKER_IMAGE}}
-    # Publish the RC *.jar to bucket
-    - put: bucket-release-candidate
-      params:
-        file: artifact-dir/spring-music*.jar
-    - put: version
-      params: {file: version/number}
+# Build and publish artifact to S3
+- name: job-build-and-publish-artifacts
+  plan:
+  # Clone the Git Repo
+  - get: resource-git
+    trigger: true
+  # Version it
+  - get: version
+    params: { bump: patch }
+  # Build the apps by Gradle
+  - task: task-build-artifact
+    file: resource-git/ci/tasks/build-artifact.yml
+    timeout: 5m
+    params:
+      DOCKER_IMAGE: ((DOCKER_IMAGE))
+  # Publish the *.jar to bucket
+  - put: bucket-production-release
+    params:
+      file: artifact-dir/spring-music*.jar
+  # Update the version
+  - put: version
+    params: {file: version/number}
 
-  # SIT
-  - name: integration-tests
-    serial_groups: [version]
-    plan:
-    # Aggregate the inputs for further SIT
-    - aggregate:
-      - get: version
-        passed: [build-artifact]
-        trigger: true
-      - get: bucket-release-candidate
-        passed: [build-artifact]
-      - get: git-repo
-        passed: [build-artifact]
-    # Deploy app to Test Env
-    - put: cf-deploy-test-app
-      params:
-        manifest: git-repo/manifest-test.yml
-        current_app_name: spring-music-test
-        path: bucket-release-candidate/spring-music*.jar
-    # Verify the app whether it's been successfully deployed
-    - task: verify
-      file: git-repo/ci/tasks/verify-test.yml
-      params:
-        DOCKER_IMAGE: {{DOCKER_IMAGE}}
-        CONCOURSE_DEMO_URL: {{VERIFY_URL}}
-
-  # Finally deploy it to PROD Env
-  - name: ship-it
-    serial_groups: [version]
-    serial: true
-    plan:
-    # Aggregate the inputs for PROD
-    # Note: intentionally not set the trigger here
-    - aggregate:
-      - get: bucket-release-candidate
-        passed: [integration-tests]
-      - get: version
-        params: { bump: final }
-        passed: [integration-tests]
-        trigger: true
-      - get: git-repo
-        passed: [integration-tests]
-    # Prepare for final
-    - task: prepare-final
-      file: git-repo/ci/tasks/prepare-final.yml
-      params:
-        base_name: spring-music
-        DOCKER_IMAGE: {{DOCKER_IMAGE}}
-    # Put it to bucket
-    - put: bucket-production-release
-      params:
-        file: final-dir/spring-music*.jar
-    # Deploy app to PROD Env
-    - put: cf-deploy-production-app
-      params:
-        manifest: git-repo/manifest-prod.yml
-        current_app_name: spring-music
-        path: final-dir/spring-music*.jar
-
-  - name: tag-it
-    serial_groups: [version]
-    plan:
-      - get: version
-        params: {bump: final}
-        passed: [ship-it]
-        trigger: true
-      # Tag the Git Repo for the release
-      - get: git-repo
-        passed: [ship-it]
-        trigger: true
-      - put: git-repo
-        params:
-          repository: git-repo
-          tag: version/number
-      # Release a new version
-      - put: version
-        params: { bump: patch }
+# Deploy it PWS
+- name: job-deploy-to-pws
+  serial_groups: [version]
+  serial: true
+  plan:
+  - get: resource-git
+    trigger: true
+  - get: bucket-production-release
+    trigger: true
+    passed: [job-build-and-publish-artifacts]
+  - put: cf-deploy-production-app
+    params:
+      manifest: resource-git/manifest.yml
+      # This should be the name of the application that this will re-deploy over. 
+      # If this is set the resource will perform a zero-downtime deploy.
+      current_app_name: ((CURRENT_APP_NAME))
+      path: bucket-production-release/spring-music*.jar
 
 ##############################################################################
 
 # Resources
 resources:
-
 # Git Resource
-- name: git-repo
+- name: resource-git
   type: git
   source:
-    uri: {{GIT_REPO}}
+    uri: ((GIT_REPO))
     branch: master
-    private_key: {{GIT_PRIVATE_KEY}}
-
-# CF Resource for Test
-- name: cf-deploy-test-app
-  type: cf
-  source:
-    api: {{CF_API}}
-    username: {{CF_USER}}
-    password: {{CF_PASS}}
-    organization: {{CF_TEST_ORG}}
-    space: {{CF_TEST_SPACE}}
-    skip_cert_check: true
 
 # CF Resource for PROD
 - name: cf-deploy-production-app
   type: cf
   source:
-    api: {{CF_API}}
-    username: {{CF_USER}}
-    password: {{CF_PASS}}
-    organization: {{CF_PROD_ORG}}
-    space: {{CF_PROD_SPACE}}
+    api: ((CF_API))
+    username: ((CF_USER))
+    password: ((CF_PASSWD))
+    organization: ((CF_ORG))
+    space: ((CF_SPACE))
     skip_cert_check: true
+
+# S3 bucket for final releases
+- name: bucket-production-release
+  type: s3
+  source:
+    bucket: {{S3_BUCKET_RELEASE}}
+    regexp: {{S3_PROD_REGEXP}}
+    access_key_id: {{S3_ACCESS_KEY_ID}}
+    secret_access_key: {{S3_SECRET_ACCESS_KEY}}
+    endpoint: {{S3_ENDPOINT}}
+    disable_ssl: true
 
 # Semver
 - name: version
@@ -150,25 +93,3 @@ resources:
     endpoint: {{S3_ENDPOINT}}
     disable_ssl: true
     initial_version: 1.0.0
-
-# S3 bucket for release candidates
-- name: bucket-release-candidate
-  type: s3
-  source:
-    bucket: {{S3_BUCKET_RC}}
-    regexp: {{S3_RC_REGEXP}}
-    access_key_id: {{S3_ACCESS_KEY_ID}}
-    secret_access_key: {{S3_SECRET_ACCESS_KEY}}
-    endpoint: {{S3_ENDPOINT}}
-    disable_ssl: true
-
-# S3 bucket for final releases
-- name: bucket-production-release
-  type: s3
-  source:
-    bucket: {{S3_BUCKET_RELEASE}}
-    regexp: {{S3_PROD_REGEXP}}
-    access_key_id: {{S3_ACCESS_KEY_ID}}
-    secret_access_key: {{S3_SECRET_ACCESS_KEY}}
-    endpoint: {{S3_ENDPOINT}}
-    disable_ssl: true

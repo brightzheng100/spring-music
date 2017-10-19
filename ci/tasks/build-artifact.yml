@@ -4,20 +4,21 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: 192.168.100.1:5000/concourse-gradle
-    insecure_registries: [ "192.168.100.1:5000" ]
-    tag: "latest"
+    #repository: 192.168.100.1:5000/concourse-gradle
+    #insecure_registries: [ "192.168.100.1:5000" ]
+    repository: ((DOCKER_IMAGE))
+    tag: latest
 
 
 inputs:
-  - name: git-repo
+  - name: resource-git
   - name: version
 
 outputs:
   - name: artifact-dir
 
 run:
-  path: git-repo/ci/tasks/build-artifact.sh
+  path: resource-git/ci/tasks/build-artifact.sh
 
 params:
   DOCKER_IMAGE:
