@@ -6,5 +6,5 @@ version="1.0.0"
 echo "version to use: ${version}"
 
 cd resource-git
-./gradlew assemble -Pversion=$version
+gradle assemble -Pversion=$version
 cp build/libs/*.jar ../artifact-dir/
