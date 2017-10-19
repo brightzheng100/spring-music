@@ -4,7 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: brianbyers/concourse-gradle
+    repository: ((docker_image))
     tag: latest
 
 inputs:
@@ -17,4 +17,4 @@ run:
   path: resource-git/ci/tasks/tiny-all-in-one.sh
 
 params:
-  DOCKER_IMAGE:
+  docker_image:
