@@ -15,6 +15,3 @@ outputs:
 
 run:
   path: resource-git/ci/tasks/tiny-all-in-one.sh
-
-params:
-  docker_image:
