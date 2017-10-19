@@ -6,7 +6,7 @@ image_resource:
   source:
     #repository: 192.168.100.1:5000/concourse-gradle
     #insecure_registries: [ "192.168.100.1:5000" ]
-    repository: ((DOCKER_IMAGE))
+    repository: brianbyers/concourse-gradle
     tag: latest
 
 
@@ -21,4 +21,4 @@ run:
   path: resource-git/ci/tasks/build-artifact.sh
 
 params:
-  DOCKER_IMAGE: ((DOCKER_IMAGE))
+  DOCKER_IMAGE:
