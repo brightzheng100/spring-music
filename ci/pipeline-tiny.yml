@@ -17,7 +17,7 @@ jobs:
   - put: cf-deploy-production-app
     params:
       manifest: resource-git/manifest.yml
-      current_app_name: spring-music
+      current_app_name: ((CURRENT_APP_NAME))
       path: artifact-dir/spring-music*.jar
 
 resources:
