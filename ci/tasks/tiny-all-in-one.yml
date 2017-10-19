@@ -21,3 +21,6 @@ run:
     echo "hello"
     echo ${docker_image}
   #path: resource-git/ci/tasks/tiny-all-in-one.sh
+
+params:
+  docker_image:
