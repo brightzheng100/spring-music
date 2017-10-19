@@ -9,6 +9,8 @@ jobs:
 
 # Build and publish artifact to S3
 - name: job-build-and-publish-artifacts
+  serial_groups: [version]
+  serial: true
   plan:
   # Clone the Git Repo
   - get: resource-git
