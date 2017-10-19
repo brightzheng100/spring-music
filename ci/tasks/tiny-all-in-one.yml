@@ -14,4 +14,9 @@ outputs:
   - name: artifact-dir
 
 run:
-  path: resource-git/ci/tasks/tiny-all-in-one.sh
+  path: sh
+  args:
+  - -exc
+  - |
+    echo ${docker_image}
+  #path: resource-git/ci/tasks/tiny-all-in-one.sh
