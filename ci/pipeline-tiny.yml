@@ -1,7 +1,10 @@
 ---
 
-# Description
-# - This pipeline just build and deploy the app to PWS continueously, with no downtime
+# == Description
+#
+# This pipeline has only one simple Job
+# The objective is just to build and deploy the app to PWS
+#
 
 jobs:
 # Deploy it PWS
