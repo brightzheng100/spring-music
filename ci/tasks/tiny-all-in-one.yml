@@ -4,7 +4,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: ((docker_image))
+    repository: itstarting/javagradlegitpack
     tag: latest
 
 inputs:
@@ -14,13 +14,7 @@ outputs:
   - name: artifact-dir
 
 run:
-  path: sh
-  args:
-  - -exc
-  - |
-    echo "hello"
-    echo ${docker_image}
-  #path: resource-git/ci/tasks/tiny-all-in-one.sh
+  path: resource-git/ci/tasks/tiny-all-in-one.sh
 
 params:
   docker_image:
