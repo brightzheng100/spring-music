@@ -19,7 +19,7 @@ jobs:
   # Build the apps by Gradle
   - task: task-build-artifact
     file: resource-git/ci/tasks/build-artifact.yml
-    timeout: 5m
+    timeout: 10m
     params:
       DOCKER_IMAGE: ((DOCKER_IMAGE))
   # Publish the *.jar to bucket
