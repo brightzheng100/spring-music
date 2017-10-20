@@ -16,5 +16,8 @@ outputs:
 run:
   path: resource-git/ci/tasks/tiny-all-in-one.sh
 
+caches:
+  - path: /home/gradle/.gradle/
+
 params:
   docker_image:
