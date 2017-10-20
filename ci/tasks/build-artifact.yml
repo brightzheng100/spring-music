@@ -20,5 +20,8 @@ outputs:
 run:
   path: resource-git/ci/tasks/build-artifact.sh
 
+caches:
+  - path: .gradle/
+
 params:
   DOCKER_IMAGE:
