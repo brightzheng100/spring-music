@@ -1,7 +1,7 @@
 ---
 applications:
-- name: spring-music-test
+- name: spring-music-sit
   memory: 1g
   instances: 1
-  host: spring-music-test-bright-zheng
+  host: spring-music-sit
   #buildpack: java_buildpack_offline
