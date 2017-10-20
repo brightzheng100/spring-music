@@ -10,10 +10,10 @@ image_resource:
     tag: latest
 
 inputs:
-  - name: git-repo
+  - name: resource-git
 
 run:
-  path: git-repo/ci/tasks/verify-test.sh
+  path: resource-git/ci/tasks/verify-test.sh
 
 params:
   docker_image:
