@@ -1,7 +1,7 @@
 ---
 applications:
 - name: spring-music
-  memory: 512M
+  memory: 1g
   instances: 1
   host: spring-music-prod-bright-zheng
   #buildpack: java_buildpack_offline

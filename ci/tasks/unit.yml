@@ -4,15 +4,19 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: 192.168.100.1:5000/concourse-gradle
-    insecure_registries: [ "192.168.100.1:5000" ]
-    tag: "latest"
+    #repository: 10.244.0.8:443/javagradlegitpack
+    repository: itstarting/javagradlegitpack
+    insecure_registries: [ "10.244.0.8:443" ]
+    tag: latest
 
 inputs:
-  - name: git-repo
+  - name: resource-git
 
 run:
-  path: git-repo/ci/tasks/unit.sh
+  path: resource-git/ci/tasks/unit.sh
+
+caches:
+  - path: .gradle/
 
 params:
-  DOCKER_IMAGE:
+  docker_image:

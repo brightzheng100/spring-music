@@ -4,11 +4,10 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    #repository: brianbyers/concourse-cfcli
-    repository: 192.168.100.1:5000/concourse-gradle
-    insecure_registries: [ "192.168.100.1:5000" ]
-    tag: "latest"
-
+    #repository: 10.244.0.8:443/javagradlegitpack
+    repository: itstarting/javagradlegitpack
+    insecure_registries: [ "10.244.0.8:443" ]
+    tag: latest
 
 inputs:
   - name: git-repo
@@ -17,5 +16,5 @@ run:
   path: git-repo/ci/tasks/verify-test.sh
 
 params:
-  DOCKER_IMAGE:
-  CONCOURSE_DEMO_URL:
+  docker_image:
+  concourse_demo_url:

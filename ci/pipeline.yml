@@ -1,11 +1,21 @@
+---
+
+# == Description
+# This pipeline has more Jobs
+# 1. Unit Test
+# 1. Build and publish artifact(s) to S3 Store
+# 2. Deploy it to PWS
+
 jobs:
   # Unit Test
   - name: unit-tests
     plan:
-    - get: git-repo
+    - get: resource-git
       trigger: true
     - task: unit
-      file: git-repo/ci/tasks/unit.yml
+      file: resource-git/ci/tasks/unit.yml
+      params:
+        docker_image: ((DOCKER_IMAGE))
 
   # Build Artifacts
   - name: build-artifact
@@ -13,7 +23,7 @@ jobs:
     serial: true
     plan:
     # Clone the Git Repo
-    - get: git-repo
+    - get: resource-git
       passed: [unit-tests]
       trigger: true
     # Version it as Release Candidate
@@ -21,16 +31,18 @@ jobs:
       params: { pre: rc }
     # Build the apps by Gradle
     - task: build-artifact
-      file: git-repo/ci/tasks/build-artifact.yml
-      timeout: 5m
+      file: resource-git/ci/tasks/build-artifact.yml
+      timeout: 10m
+      params:
+        docker_image: ((DOCKER_IMAGE))
     # Publish the RC *.jar to bucket
     - put: bucket-release-candidate
       params:
         file: artifact-dir/spring-music*.jar
     # Tag the Git Repo with the RC
-    #- put: git-repo
+    #- put: resource-git
     #  params:
-    #    repository: git-repo
+    #    repository: resource-git
     #    tag: version/number
     # Bump the version number
     - put: version
@@ -47,19 +59,20 @@ jobs:
         trigger: true
       - get: bucket-release-candidate
         passed: [build-artifact]
-      - get: git-repo
+      - get: resource-git
         passed: [build-artifact]
     # Deploy app to Test Env
     - put: cf-deploy-test-app
       params:
-        manifest: git-repo/manifest-test.yml
+        manifest: resource-git/manifest-test.yml
         current_app_name: spring-music-test
         path: bucket-release-candidate/spring-music*.jar
     # Verify the app whether it's been successfully deployed
     - task: verify
-      file: git-repo/ci/tasks/verify-test.yml
+      file: resource-git/ci/tasks/verify-test.yml
       params:
-        CONCOURSE_DEMO_URL: {{VERIFY_URL}}
+        docker_image: ((DOCKER_IMAGE))
+        concourse_demo_url: {{VERIFY_URL}}
 
   # Promote to UAT after test has been verified
   - name: promote-to-uat
@@ -72,12 +85,12 @@ jobs:
         trigger: true
       - get: bucket-release-candidate
         passed: [integration-tests]
-      - get: git-repo
+      - get: resource-git
         passed: [integration-tests]
     # Deploy to UAT Env
     - put: cf-deploy-uat-app
       params:
-        manifest: git-repo/manifest-uat.yml
+        manifest: resource-git/manifest-uat.yml
         current_app_name: spring-music-uat
         path: bucket-release-candidate/spring-music*.jar
 
@@ -94,12 +107,13 @@ jobs:
       - get: version
         params: { bump: final }
         passed: [promote-to-uat]
-      - get: git-repo
+      - get: resource-git
         passed: [promote-to-uat]
     # Prepare for final
     - task: prepare-final
-      file: git-repo/ci/tasks/prepare-final.yml
+      file: resource-git/ci/tasks/prepare-final.yml
       params:
+        docker_image: ((DOCKER_IMAGE))
         base_name: spring-music
     # Put it to bucket
     - put: bucket-production-release
@@ -108,7 +122,7 @@ jobs:
     # Deploy app to PROD Env
     - put: cf-deploy-production-app
       params:
-        manifest: git-repo/manifest-prod.yml
+        manifest: resource-git/manifest-prod.yml
         current_app_name: spring-music
         path: final-dir/spring-music*.jar
 
@@ -132,12 +146,12 @@ jobs:
         passed: [ship-it]
         trigger: true
       # Tag the Git Repo for the release
-      - get: git-repo
+      - get: resource-git
         passed: [ship-it]
         trigger: true
-      - put: git-repo
+      - put: resource-git
         params:
-          repository: git-repo
+          repository: resource-git
           tag: version/number
           #annotate: "tagged by Concourse"
       # Release a new version
@@ -150,7 +164,7 @@ jobs:
 resources:
 
 # Git Resource
-- name: git-repo
+- name: resource-git
   type: git
   source:
     uri: {{GIT_REPO}}
