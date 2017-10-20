@@ -43,14 +43,15 @@ RUN set -o errexit -o nounset \
 	\
 	&& echo "==>Symlinking root Gradle cache to gradle Gradle cache" \
 	&& ln -s /home/gradle/.gradle /root/.gradle \
-    \
-    && echo "==>Adding bash" \
-    && apk add --update bash \
-    \
-    && echo "==>Adding Git" \
-    && apk --update add git openssh \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm /var/cache/apk/*
+  \
+  && echo "==>Adding Git" \
+  && apk --update add git openssh \
+  \
+  && echo "==>Adding necessary tools: bash, curl" \
+  && apk --update add bash curl\
+	\
+  && rm -rf /var/lib/apt/lists/* \
+  && rm /var/cache/apk/*
 
 
 # Create Gradle volume

@@ -1,7 +1,7 @@
 ---
 applications:
-- name: spring-music-sit
+- name: spring-music-bright-sit
   memory: 1g
   instances: 1
-  host: spring-music-sit
+  host: spring-music-bright-sit
   #buildpack: java_buildpack_offline
