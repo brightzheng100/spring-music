@@ -63,3 +63,5 @@ RUN set -o errexit -o nounset \
 	&& echo "==>Testing Gradle and Git Installation" \
 	&& gradle --version \
     && git version
+
+ENTRYPOINT ["/bin/bash"]
