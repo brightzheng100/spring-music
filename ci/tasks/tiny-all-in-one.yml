@@ -4,8 +4,8 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: {{DOCKER_IMAGE}}
-    #repository: 10.244.0.8:443/itstarting/javagradlegitpack
+    #repository: {{DOCKER_IMAGE}}
+    repository: 10.244.0.8:443/itstarting/javagradlegitpack
     #repository: itstarting/javagradlegitpack
     insecure_registries: [ "10.244.0.8:443" ]
     tag: latest
