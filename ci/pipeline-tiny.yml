@@ -14,15 +14,23 @@ jobs:
     trigger: true
   - task: task-build-artifact
     file: resource-git/ci/tasks/tiny-all-in-one.yml
-    params:
-      DOCKER_IMAGE: ((DOCKER_IMAGE))
+    image: image-javagradlegitpack
   - put: cf-deploy-production-app
     params:
       manifest: resource-git/manifest.yml
       current_app_name: ((CURRENT_APP_NAME))
       path: artifact-dir/spring-music*.jar
 
+
 resources:
+# Custom Image
+- name: image-javagradlegitpack
+  type: docker-image
+  source:
+    repository: ((DOCKER_IMAGE))
+    insecure_registries: [ "10.244.0.8:443" ]
+    tag: latest
+
 # Git Resource
 - name: resource-git
   type: git
