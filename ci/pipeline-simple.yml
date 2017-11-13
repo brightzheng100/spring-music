@@ -19,11 +19,11 @@ jobs:
   - get: version
     params: { bump: patch }
   # Build the apps by Gradle
+  - get: image-javagradlegitpack
   - task: task-build-artifact
+    image: image-javagradlegitpack
     file: resource-git/ci/tasks/build-artifact.yml
     timeout: 10m
-    params:
-      DOCKER_IMAGE: ((DOCKER_IMAGE))
   # Publish the *.jar to bucket
   - put: bucket-production-release
     params:
@@ -54,6 +54,14 @@ jobs:
 
 # Resources
 resources:
+# Custom Image
+- name: image-javagradlegitpack
+  type: docker-image
+  source:
+    repository: ((DOCKER_IMAGE))
+    insecure_registries: ((DOCKER_INSECURE_REGISTRIES))
+    tag: latest
+
 # Git Resource
 - name: resource-git
   type: git

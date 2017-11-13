@@ -12,10 +12,10 @@ jobs:
     plan:
     - get: resource-git
       trigger: true
+    - get: image-javagradlegitpack
     - task: unit
+      image: image-javagradlegitpack
       file: resource-git/ci/tasks/unit.yml
-      params:
-        docker_image: ((DOCKER_IMAGE))
 
   # Build Artifacts
   - name: build-artifact
@@ -30,11 +30,11 @@ jobs:
     - get: version
       params: { pre: rc }
     # Build the apps by Gradle
+    - get: image-javagradlegitpack
     - task: build-artifact
+      image: image-javagradlegitpack
       file: resource-git/ci/tasks/build-artifact.yml
       timeout: 10m
-      params:
-        docker_image: ((DOCKER_IMAGE))
     # Publish the RC *.jar to bucket
     - put: bucket-release-candidate
       params:
@@ -68,10 +68,11 @@ jobs:
         current_app_name: ((CURRENT_APP_NAME_SIT))
         path: bucket-release-candidate/spring-music*.jar
     # Verify the app whether it's been successfully deployed
+    - get: image-javagradlegitpack
     - task: verify
+      image: image-javagradlegitpack
       file: resource-git/ci/tasks/verify-test.yml
       params:
-        docker_image: ((DOCKER_IMAGE))
         concourse_demo_url: ((VERIFY_URL))
 
   # Promote to UAT after test has been verified
@@ -110,10 +111,11 @@ jobs:
       - get: resource-git
         passed: [promote-to-uat]
     # Prepare for final
+    - get: image-javagradlegitpack
     - task: prepare-final
+      image: image-javagradlegitpack
       file: resource-git/ci/tasks/prepare-final.yml
       params:
-        docker_image: ((DOCKER_IMAGE))
         base_name: spring-music
     # Put it to bucket
     - put: bucket-production-release
@@ -162,6 +164,13 @@ jobs:
 
 # Resources
 resources:
+# Custom Image
+- name: image-javagradlegitpack
+  type: docker-image
+  source:
+    repository: ((DOCKER_IMAGE))
+    insecure_registries: ((DOCKER_INSECURE_REGISTRIES))
+    tag: latest
 
 # Git Resource
 - name: resource-git

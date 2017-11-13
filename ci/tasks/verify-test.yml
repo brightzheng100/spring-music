@@ -1,14 +1,6 @@
 ---
 platform: linux
 
-image_resource:
-  type: docker-image
-  source:
-    #repository: 10.244.0.8:443/javagradlegitpack
-    repository: itstarting/javagradlegitpack
-    insecure_registries: [ "10.244.0.8:443" ]
-    tag: latest
-
 inputs:
   - name: resource-git
 
@@ -16,5 +8,4 @@ run:
   path: resource-git/ci/tasks/verify-test.sh
 
 params:
-  docker_image:
   concourse_demo_url:
