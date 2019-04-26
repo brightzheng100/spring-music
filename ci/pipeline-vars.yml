@@ -1,0 +1,57 @@
+app:
+  dev:
+    name: spring-music-bright
+    url: https://spring-music-bright.cfapps.io
+  uat:
+    name: spring-music-bright
+  prod:
+    name: spring-music-bright
+
+git:
+  uri: git@github.com:<YOUR-GITHUB-USER>/spring-music.git
+  branch: master
+  private_key: ((github_private_key.private_key))
+
+cf:
+  dev:
+    api: your-dev-cf-api              # e.g. https://api.run.pivotal.io
+    username: your-dev-cf-username
+    password: your-dev-cf-password    # or if using CredHub: ((dev_password))
+    organization: your-dev-cf-org
+    space: your-dev-cf-space
+    skip_cert_check: true
+  uat:
+    api: your-uat-cf-api              # e.g. https://api.run.pivotal.io
+    username: your-uat-cf-username
+    password: your-uat-cf-password    # or if using CredHub: ((uat_password))
+    organization: your-uat-cf-org
+    space: your-uat-cf-space
+    skip_cert_check: true
+  prod:
+    api: your-prod-cf-api             # e.g. https://api.run.pivotal.io
+    username: your-prod-cf-username
+    password: your-prod-cf-password   # or if using CredHub: ((prod_password))
+    organization: your-prod-cf-org
+    space: your-prod-cf-space
+    skip_cert_check: true
+
+s3:
+  endpoint: http://minio.test:9000
+  access_key_id: admin
+  access_key_secret: ((minio_password))
+  buckets:
+    version:
+      name: version
+      key: key
+      initial_version: 1.0.8
+    release-candidates:
+      name: release-candidates
+      regexp: spring-music-(.*).jar
+    releases:
+      name: releases
+      regexp: spring-music-(.*).jar
+
+image:
+  repository: itstarting/javagradlegitpack
+  tag: latest
+  insecure_registries:

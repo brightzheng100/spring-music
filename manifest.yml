@@ -1,6 +1,5 @@
 ---
 applications:
-- name: spring-music-pivotal-1
+- name: ((name))
   memory: 1G
-  host: spring-music-pivotal-1
   path: build/libs/spring-music-1.0.0.jar

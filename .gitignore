@@ -1,20 +1,16 @@
+_*
+.*
+
 *.iml
 *.ipr
 *.ids
 *.iws
-.idea/
 
-.project
-.metadata
 local.properties
-.classpath
-.settings/
-.loadpath
 
 bin/
 target/
 
-.gradle
 build/
 
 *.log*

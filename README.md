@@ -13,10 +13,10 @@ One Spring bean profile should be activated to choose the database provider that
 
 The application can be started locally using the following command:
 
-~~~
+```sh
 $ ./gradlew clean assemble
 $ java -jar -Dspring.profiles.active=<profile> build/libs/spring-music.jar
-~~~
+```
 
 where `<profile>` is one of the following values:
 
@@ -40,10 +40,10 @@ If more than one service containing any of these values is bound to the applicat
 
 After installing the 'cf' [command-line interface for Cloud Foundry](http://docs.cloudfoundry.org/cf-cli/), targeting a Cloud Foundry instance, and logging in, the application can be built and pushed using these commands:
 
-~~~
-$ ./gradlew clean assemble
-$ cf push
-~~~
+```sh
+$ ./gradlew clean assemble -Pversion=1.0.0
+$ cf push --var name=spring-music-demo
+```
 
 The application will be pushed using settings in the provided `manifest.yml` file. The output from the command will show the URL that has been assigned to the application.
 
@@ -55,16 +55,12 @@ Using the provided manifest, the application will be created without an external
 
 Depending on the Cloud Foundry service provider, persistence services might be offered and managed by the platform. These steps can be used to create and bind a service that is managed by the platform:
 
-~~~
-# view the services available
+```sh
 $ cf marketplace
-# create a service instance
-$ cf create-service <service> <service plan> <service name>
-# bind the service instance to the application
-$ cf bind-service <app name> <service name>
-# restart the application so the new service is detected
-$ cf restart
-~~~
+$ cf create-service <service> <service-plan> <service-name>
+$ cf bind-service <app-name> <service-name>
+$ cf restage
+```
 
 #### User-provided services
 
@@ -72,27 +68,31 @@ Cloud Foundry also allows service connection information and credentials to be p
 
 These steps use examples for username, password, host name, and database name that should be replaced with real values.
 
-~~~
-# create a user-provided Oracle database service instance
+```sh
 $ cf create-user-provided-service oracle-db -p '{"uri":"oracle://root:secret@dbserver.example.com:1521/mydatabase"}'
-# create a user-provided MySQL database service instance
 $ cf create-user-provided-service mysql-db -p '{"uri":"mysql://root:secret@dbserver.example.com:3306/mydatabase"}'
-# bind a service instance to the application
-$ cf bind-service <app name> <service name>
-# restart the application so the new service is detected
-$ cf restart
-~~~
+$ cf bind-service <app-name> <service-name>
+$ cf restage
+```
 
 #### Changing bound services
 
 To test the application with different services, you can simply stop the app, unbind a service, bind a different database service, and start the app:
 
-~~~
-$ cf unbind-service <app name> <service name>
-$ cf bind-service <app name> <service name>
+```sh
+$ cf unbind-service <app-name> <service-name>
+$ cf bind-service <app-name> <service-name>
 $ cf restart
-~~~
+```
 
 #### Database drivers
 
 Database drivers for MySQL, Postgres, Microsoft SQL Server, MongoDB, and Redis are included in the project. To connect to an Oracle database, you will need to download the appropriate driver (e.g. from http://www.oracle.com/technetwork/database/enterprise-edition/jdbc-112010-090769.html?ssSourceSiteId=otnjp), add the driver .jar file to the `src/main/webapp/WEB-INF/lib` directory in the project, and re-build the application .jar file.
+
+## CI/CD
+
+You may want to automate the CI/CD process as well to streamline everything to achieve something like this:
+
+![pipeline.png](ci/pipeline.png)
+
+Please refer to [ci/README.md](ci/README.md) for detailed guide.

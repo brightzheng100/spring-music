@@ -67,7 +67,7 @@ jobs:
     - get: image-javagradlegitpack
     - task: verify
       image: image-javagradlegitpack
-      file: resource-git/ci/tasks/verify-dev.yml
+      file: resource-git/ci/tasks/verify-test.yml
       params:
         app_url: ((app.dev.url))
 
