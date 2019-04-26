@@ -18,7 +18,7 @@ jobs:
       file: resource-git/ci/tasks/unit.yml
 
   # Build Artifacts
-  - name: build-artifact
+  - name: build
     serial_groups: [version]
     serial: true
     plan:
@@ -39,41 +39,37 @@ jobs:
     - put: bucket-release-candidate
       params:
         file: artifact-dir/spring-music*.jar
-    # Tag the Git Repo with the RC
-    #- put: resource-git
-    #  params:
-    #    repository: resource-git
-    #    tag: version/number
-    # Bump the version number
     - put: version
       params: {file: version/number}
 
   # SIT
-  - name: integration-tests
+  - name: sit
     serial_groups: [version]
     plan:
     # Aggregate the inputs for further SIT
     - aggregate:
       - get: version
-        passed: [build-artifact]
+        passed: [build]
         trigger: true
       - get: bucket-release-candidate
-        passed: [build-artifact]
+        passed: [build]
       - get: resource-git
-        passed: [build-artifact]
+        passed: [build]
     # Deploy app to Test Env
-    - put: cf-deploy-test-app
+    - put: cf-dev
       params:
-        manifest: resource-git/manifest-test.yml
-        current_app_name: ((CURRENT_APP_NAME_SIT))
+        manifest: resource-git/manifest-dev.yml
+        vars:
+          name: ((app.dev.name))
+        current_app_name: ((app.dev.name))
         path: bucket-release-candidate/spring-music*.jar
     # Verify the app whether it's been successfully deployed
     - get: image-javagradlegitpack
     - task: verify
       image: image-javagradlegitpack
-      file: resource-git/ci/tasks/verify-test.yml
+      file: resource-git/ci/tasks/verify-dev.yml
       params:
-        concourse_demo_url: ((VERIFY_URL))
+        app_url: ((app.dev.url))
 
   # Promote to UAT after test has been verified
   - name: promote-to-uat
@@ -82,34 +78,32 @@ jobs:
     # Aggregate inputs for UAT
     - aggregate:
       - get: version
-        passed: [integration-tests]
+        passed: [sit]
         trigger: true
       - get: bucket-release-candidate
-        passed: [integration-tests]
       - get: resource-git
-        passed: [integration-tests]
     # Deploy to UAT Env
-    - put: cf-deploy-uat-app
+    - put: cf-uat
       params:
         manifest: resource-git/manifest-uat.yml
-        current_app_name: ((CURRENT_APP_NAME_UAT))
+        vars:
+          name: ((app.uat.name))
+        current_app_name: ((app.uat.name))
         path: bucket-release-candidate/spring-music*.jar
 
   # Finally deploy it to PROD Env
-  - name: ship-it
+  - name: promote-to-prod
     serial_groups: [version]
     serial: true
     plan:
     # Aggregate the inputs for PROD
     # Note: intentionally not set the trigger here
     - aggregate:
-      - get: bucket-release-candidate
-        passed: [promote-to-uat]
       - get: version
         params: { bump: final }
         passed: [promote-to-uat]
+      - get: bucket-release-candidate
       - get: resource-git
-        passed: [promote-to-uat]
     # Prepare for final
     - get: image-javagradlegitpack
     - task: prepare-final
@@ -122,34 +116,24 @@ jobs:
       params:
         file: final-dir/spring-music*.jar
     # Deploy app to PROD Env
-    - put: cf-deploy-production-app
+    - put: cf-prod
       params:
         manifest: resource-git/manifest-prod.yml
-        current_app_name: ((CURRENT_APP_NAME_PROD))
+        vars:
+          name: ((app.prod.name))
+        current_app_name: ((app.prod.name))
         path: final-dir/spring-music*.jar
-
-#  - name: major
-#    serial_groups: [ version ]
-#    plan:
-#      - put: version
-#        params: { bump: major, pre: rc }
-#
-#  - name: minor
-#    serial_groups: [ version ]
-#    plan:
-#      - put: version
-#        params: { bump: minor, pre: rc }
 
   - name: tag-it
     serial_groups: [version]
     plan:
       - get: version
         params: {bump: final}
-        passed: [ship-it]
+        passed: [promote-to-prod]
         trigger: true
       # Tag the Git Repo for the release
       - get: resource-git
-        passed: [ship-it]
+        passed: [promote-to-prod]
         trigger: true
       - put: resource-git
         params:
@@ -168,84 +152,82 @@ resources:
 - name: image-javagradlegitpack
   type: docker-image
   source:
-    repository: ((DOCKER_IMAGE))
-    insecure_registries: ((DOCKER_INSECURE_REGISTRIES))
-    tag: latest
+    repository: ((image.repository))
+    insecure_registries: ((image.insecure_registries))
+    tag: ((image.tag))
 
 # Git Resource
 - name: resource-git
   type: git
   source:
-    uri: ((GIT_REPO))
-    branch: master
-    private_key: ((GIT_PRIVATE_KEY.private_key))
+    uri: ((git.uri))
+    branch: ((git.branch))
+    private_key: ((git.private_key))
 
 # CF Resource for Test
-- name: cf-deploy-test-app
+- name: cf-dev
   type: cf
   source:
-    api: ((CF_API))
-    username: ((CF_USER))
-    password: ((CF_PASSWD))
-    organization: ((CF_TEST_ORG))
-    space: ((CF_TEST_SPACE))
-    skip_cert_check: true
+    api: ((cf.dev.api))
+    username: ((cf.dev.username))
+    password: ((cf.dev.password))
+    organization: ((cf.dev.organization))
+    space: ((cf.dev.space))
+    skip_cert_check: ((cf.dev.skip_cert_check))
 
 # CF Resource for UAT
-- name: cf-deploy-uat-app
+- name: cf-uat
   type: cf
   source:
-    api: ((CF_API))
-    username: ((CF_USER))
-    password: ((CF_PASSWD))
-    organization: ((CF_UAT_ORG))
-    space: ((CF_UAT_SPACE))
-    skip_cert_check: true
+    api: ((cf.uat.api))
+    username: ((cf.uat.username))
+    password: ((cf.uat.password))
+    organization: ((cf.uat.organization))
+    space: ((cf.uat.space))
+    skip_cert_check: ((cf.uat.skip_cert_check))
 
 # CF Resource for PROD
-- name: cf-deploy-production-app
+- name: cf-prod
   type: cf
   source:
-    api: ((CF_API))
-    username: ((CF_USER))
-    password: ((CF_PASSWD))
-    organization: ((CF_PROD_ORG))
-    space: ((CF_PROD_SPACE))
-    skip_cert_check: true
+    api: ((cf.prod.api))
+    username: ((cf.prod.username))
+    password: ((cf.prod.password))
+    organization: ((cf.prod.organization))
+    space: ((cf.prod.space))
+    skip_cert_check: ((cf.prod.skip_cert_check))
 
 # Semver
 - name: version
   type: semver
   source:
     driver: s3
-    bucket: ((S3_BUCKET_RELEASE))
-    key: ((S3_VERSION_FILE))
-    access_key_id: ((S3_ACCESS_KEY_ID))
-    secret_access_key: ((S3_SECRET_ACCESS_KEY))
-    endpoint: ((S3_ENDPOINT))
+    endpoint: ((s3.endpoint))
+    access_key_id: ((s3.access_key_id))
+    secret_access_key: ((s3.access_key_secret))
+    bucket: ((s3.buckets.version.name))
+    key: ((s3.buckets.version.key))
+    initial_version: ((s3.buckets.version.initial_version))
     disable_ssl: true
-    initial_version: 1.0.0
 
 # S3 bucket for release candidates
 - name: bucket-release-candidate
   type: s3
   source:
-    bucket: ((S3_BUCKET_RC))
-    #versioned_file: ((S3_VERSION_FILE))
-    regexp: ((S3_RC_REGEXP))
-    access_key_id: ((S3_ACCESS_KEY_ID))
-    secret_access_key: ((S3_SECRET_ACCESS_KEY))
-    endpoint: ((S3_ENDPOINT))
+    endpoint: ((s3.endpoint))
+    access_key_id: ((s3.access_key_id))
+    secret_access_key: ((s3.access_key_secret))
+    bucket: ((s3.buckets.release-candidates.name))
+    regexp: ((s3.buckets.release-candidates.regexp))
     disable_ssl: true
 
 # S3 bucket for final releases
 - name: bucket-production-release
   type: s3
   source:
-    bucket: ((S3_BUCKET_RELEASE))
-    #versioned_file: ((S3_VERSION_FILE))
-    regexp: ((S3_PROD_REGEXP))
-    access_key_id: ((S3_ACCESS_KEY_ID))
-    secret_access_key: ((S3_SECRET_ACCESS_KEY))
-    endpoint: ((S3_ENDPOINT))
+    endpoint: ((s3.endpoint))
+    access_key_id: ((s3.access_key_id))
+    secret_access_key: ((s3.access_key_secret))
+    bucket: ((s3.buckets.releases.name))
+    regexp: ((s3.buckets.releases.regexp))
     disable_ssl: true

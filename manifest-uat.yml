@@ -1,7 +1,5 @@
 ---
 applications:
-- name: spring-music-bright-uat
+- name: ((name))
   memory: 1g
   instances: 1
-  host: spring-music-bright-uat
-  #buildpack: java_buildpack_offline

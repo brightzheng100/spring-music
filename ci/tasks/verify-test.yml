@@ -8,4 +8,4 @@ run:
   path: resource-git/ci/tasks/verify-test.sh
 
 params:
-  concourse_demo_url:
+  app_url:
