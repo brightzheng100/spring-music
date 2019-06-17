@@ -2,4 +2,4 @@
 applications:
 - name: ((name))
   memory: 1g
-  instances: 1
+  instances: 2
