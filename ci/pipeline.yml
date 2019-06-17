@@ -1,11 +1,5 @@
 ---
 
-# == Description
-# This pipeline has more Jobs
-# 1. Unit Test
-# 1. Build and publish artifact(s) to S3 Store
-# 2. Deploy it to PWS
-
 jobs:
   # Unit Test
   - name: unit-tests
